@@ -108,8 +108,8 @@ static int load_image_handler(struct fsm_context *context, struct fsm_error *err
 {
     struct fsm_context *ctx;
     ctx = context;
-    SET_TRACE(context, "in convert server_addr", "STATE_CONVERT_ADDRESS");
-    if (load_image(ctx->args->png, ctx->args->si, err) != 0)
+    SET_TRACE(context, "in load_image", "STATE_LOAD_IMAGE");
+    if (load_image(ctx->args->png, &ctx->args->si, err) != 0)
         return STATE_ERROR;
 
     if (ctx->args->mode == DECRYPT)
@@ -122,8 +122,8 @@ static int encrypt_data_handler(struct fsm_context *context, struct fsm_error *e
 {
     struct fsm_context *ctx;
     ctx = context;
-    SET_TRACE(context, "in create socket", "STATE_ENCRYPT_DATA");
-    if (encrypt_data(ctx->args->png, ctx->args->key, &ctx->args->payload, &ctx->args->payload_len, err) != 0)
+    SET_TRACE(context, "in encrypt data", "STATE_ENCRYPT_DATA");
+    if (encrypt_data(ctx->args->message, ctx->args->key, &ctx->args->payload, &ctx->args->payload_len, err) != 0)
         return STATE_ERROR;
 
     return STATE_EMBED_DATA;
@@ -133,11 +133,12 @@ static int extract_data_handler(struct fsm_context *context, struct fsm_error *e
 {
     struct fsm_context *ctx;
     ctx = context;
-    SET_TRACE(context, "in bind socket", "STATE_BIND_SOCKET");
-    // if (socket_bind(ctx->args->sockfd, &ctx->args->server_addr_struct, err))
-    // {
-    //     return STATE_ERROR;
-    // }
+    SET_TRACE(context, "in extract", "STATE_EXTRACT_DATA");
+
+    if (extract_data(&ctx->args->si, &ctx->args->payload, &ctx->args->payload_len, err))
+    {
+        return STATE_ERROR;
+    }
 
     return STATE_DECRYPT_DATA;
 }
@@ -146,24 +147,60 @@ static int embed_data_handler(struct fsm_context *context, struct fsm_error *err
 {
     struct fsm_context *ctx;
     ctx = context;
-    SET_TRACE(context, "in start listening", "STATE_START_LISTENING");
-    // if (start_listening(ctx->args->sockfd, SOMAXCONN, err))
-    // {
-    //     return STATE_ERROR;
-    // }
+    SET_TRACE(context, "in embed data", "STATE_EMBED_DATA");
+    if (embed_data(&ctx->args->si, ctx->args->payload, ctx->args->payload_len, err))
+    {
+        return STATE_ERROR;
+    }
 
     return STATE_OUTPUT;
+}
+
+static char *make_steg_filename(const char *orig)
+{
+    const char *suffix = "_steg.png";
+    size_t      len    = strlen(orig) + strlen(suffix) + 1;
+
+    char *out = malloc(len);
+    if (!out)
+        return NULL;
+
+    snprintf(out, len, "%s%s", orig, suffix);
+    return out;
 }
 
 static int output_handler(struct fsm_context *context, struct fsm_error *err)
 {
     struct fsm_context *ctx;
     ctx = context;
-    SET_TRACE(context, "in start listening", "STATE_START_LISTENING");
-    // if (start_listening(ctx->args->sockfd, SOMAXCONN, err))
-    // {
-    //     return STATE_ERROR;
-    // }
+    SET_TRACE(context, "in output", "STATE_OUTPUT");
+
+    printf("Mode: %s\n", ctx->args->mode == ENCRYPT ? "Encrypt" : "Decrypt");
+    if (ctx->args->mode == ENCRYPT)
+    {
+        char *out_name = make_steg_filename(ctx->args->png);
+        if (!out_name)
+        {
+            SET_ERROR(err, "Out of memory creating steg filename");
+            return -1;
+        }
+
+        if (write_stego_png(out_name, &ctx->args->si, err) != 0)
+        {
+            free(out_name);
+
+            return STATE_ERROR;
+        }
+        free(out_name);
+    }
+
+    if (ctx->args->mode == DECRYPT)
+    {
+        if (write_bytes_to_file("Decoded Message", ctx->args->plaintext, ctx->args->plaintext_len, err) != 0)
+        {
+            return STATE_ERROR;
+        }
+    }
 
     return STATE_CLEANUP;
 }
@@ -172,7 +209,12 @@ static int decrypt_data_handler(struct fsm_context *context, struct fsm_error *e
 {
     struct fsm_context *ctx;
     ctx = context;
-    SET_TRACE(context, "in start timer", "STATE_START_TIMER");
+    SET_TRACE(context, "in decrypt data", "STATE_DECRYPT_DATA");
+
+    if (decrypt_data(ctx->args->payload, ctx->args->payload_len, ctx->args->key, &ctx->args->plaintext, &ctx->args->plaintext_len, err))
+    {
+        return STATE_ERROR;
+    }
 
     return STATE_OUTPUT;
 }
@@ -182,6 +224,15 @@ static int cleanup_handler(struct fsm_context *context, struct fsm_error *err)
     struct fsm_context *ctx;
     ctx = context;
     SET_TRACE(context, "in cleanup handler", "STATE_CLEANUP");
+
+    free_image(&ctx->args->si);
+
+    free(ctx->args->payload);
+    ctx->args->payload     = NULL;
+    ctx->args->payload_len = 0;
+
+    free(ctx->args->plaintext);
+    ctx->args->plaintext_len = 0;
 
     return FSM_EXIT;
 }

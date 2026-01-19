@@ -12,10 +12,11 @@ set(SANITIZE TRUE)
 set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
-set(SOURCE_LIST ${SOURCE_DIR}/main.c
-        src/command_line.c
-        src/fsm.c
-        src/utils.c
+set(SOURCE_LIST
+    ${SOURCE_DIR}/main.c
+    ${SOURCE_DIR}/command_line.c
+    ${SOURCE_DIR}/fsm.c
+    ${SOURCE_DIR}/stego_png.c
 )
 
 add_compile_definitions(
@@ -100,7 +101,7 @@ if (APPLE)
     target_link_directories(stego PRIVATE /opt/homebrew/opt/libxcrypt/lib)
     target_link_libraries(stego PRIVATE crypt)
 else()
-    target_link_libraries(stego PRIVATE crypt pthread)
+    target_link_libraries(stego PRIVATE png crypto)
 endif()
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

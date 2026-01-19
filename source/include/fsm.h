@@ -43,13 +43,13 @@ typedef struct stego_image
 
 typedef struct arguments
 {
-    char        *png, *message;
-    char        *key;
-    mode         mode;
-    stego_image *si;
+    char       *png, *message;
+    char       *key;
+    mode        mode;
+    stego_image si;
 
-    uint8_t *payload;
-    size_t   payload_len;
+    uint8_t *payload, *plaintext;
+    size_t   payload_len, plaintext_len;
 } arguments;
 
 typedef struct fsm_context

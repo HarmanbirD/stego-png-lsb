@@ -19,15 +19,15 @@
 #define KEY_LEN 32
 #define PBKDF_ITERS 200000
 
-int load_image(char *filename, stego_image *out, struct fsm_error *err);
-int encrypt_data(const char *filename, const char *password, uint8_t **out_buf, size_t *out_len, struct fsm_error *err);
-int extract_data(char *filename, char **buffer);
-int embed_data(stego_image *img, const uint8_t *payload, size_t payload_len, struct fsm_error *err);
+#define STEG_HEADER_LEN (4 + 1 + SALT_LEN + IV_LEN + 4)
 
-// static int encrypt_data_handler(struct fsm_context *context, struct fsm_error *err);
-// static int extract_data_handler(struct fsm_context *context, struct fsm_error *err);
-// static int embed_data_handler(struct fsm_context *context, struct fsm_error *err);
-// static int output_handler(struct fsm_context *context, struct fsm_error *err);
-// static int decrypt_data_handler(struct fsm_context *context, struct fsm_error *err);
+int  load_image(char *filename, stego_image *out, struct fsm_error *err);
+int  encrypt_data(const char *filename, const char *password, uint8_t **out_buf, size_t *out_len, struct fsm_error *err);
+int  embed_data(stego_image *img, const uint8_t *payload, size_t payload_len, struct fsm_error *err);
+int  extract_data(stego_image *img, uint8_t **out_payload, size_t *out_len, struct fsm_error *err);
+int  decrypt_data(const uint8_t *payload, size_t payload_len, const char *password, uint8_t **out_plain, size_t *out_plain_len, struct fsm_error *err);
+int  write_stego_png(const char *out_path, stego_image *img, struct fsm_error *err);
+int  write_bytes_to_file(const char *path, const uint8_t *buf, size_t len, struct fsm_error *err);
+void free_image(stego_image *img);
 
 #endif // STEGO_PNG_H

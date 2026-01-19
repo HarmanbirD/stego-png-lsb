@@ -24,7 +24,7 @@ int parse_arguments(int argc, char *argv[], arguments *args, struct fsm_error *e
         {0,         0,                 0, 0  },
     };
 
-    while ((opt = getopt_long(argc, argv, "p:f:k:e:d:h", long_opts, NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, "p:f:k:e:dh", long_opts, NULL)) != -1)
     {
         switch (opt)
         {
@@ -198,10 +198,13 @@ int handle_arguments(const char *binary_name, arguments *args, struct fsm_error 
 
     if (args->message == NULL)
     {
-        SET_ERROR(err, "Have to pass in a readable file for the message.");
-        usage(binary_name);
+        if (args->mode != DECRYPT)
+        {
+            SET_ERROR(err, "Have to pass in a readable file for the message.");
+            usage(binary_name);
 
-        return -1;
+            return -1;
+        }
     }
 
     if (args->key == NULL)

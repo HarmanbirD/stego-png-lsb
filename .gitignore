@@ -1,6 +1,5 @@
 cmake-build-debug/
 pcap/
-video/
 
 .idea/
 files_to_send/

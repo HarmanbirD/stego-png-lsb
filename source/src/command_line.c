@@ -162,28 +162,31 @@ void usage(const char *program_name)
 {
     fprintf(stderr,
             "Usage: %s [OPTIONS]\n\n"
-            "Required options:\n"
-            "  -s, --server <addr>       Server IP address or hostname (required)\n"
-            "  -p, --port <num>          Server listen port (required)\n"
-            "  -H, --hash <hash>         Hashed password to crack (required)\n\n"
-            "Optional options:\n"
-            "  -w, --work-size <num>     Number of passwords assigned per node request\n"
-            "                             (default: 1000)\n"
-            "  -c, --checkpoint <num>    Number of attempts before a node sends a checkpoint\n"
-            "                             (default: work-size / 4)\n"
-            "  -t, --timeout <num>       Seconds to wait for a checkpoint from a client\n"
-            "                             (default: 600)\n"
-            "  -h, --help                Display this help message and exit\n\n"
-            "Examples:\n"
-            "  %s --server 192.168.1.10 --port 5000 --hash $6$... --work-size 1000\n"
-            "  %s -s example.com -p 5000 -H <hash> -c 500 -t 300\n\n",
-            program_name, program_name, program_name);
+            "Steganography tool for embedding or extracting encrypted data in PNG images.\n\n"
 
-    fputs("Notes:\n", stderr);
-    fputs("  • Long and short forms may be used interchangeably (e.g. --port or -p).\n", stderr);
-    fputs("  • If work-size is omitted it defaults to 1000.\n", stderr);
-    fputs("  • If checkpoint is omitted it defaults to work-size / 4.\n", stderr);
-    fputs("  • The program will validate numeric ranges (e.g. port must fit in uint16).\n", stderr);
+            "Required options:\n"
+            "  -p, --png <file>           Input PNG image (cover image or stego image)\n"
+            "  -k, --key <password>       Password used for encryption/decryption\n\n"
+
+            "Mode options (choose one):\n"
+            "  -e, --encrypt              Encrypt and embed data into the PNG (default)\n"
+            "  -d, --decrypt              Extract and decrypt data from the PNG\n\n"
+
+            "Encryption mode options:\n"
+            "  -f, --file <file>          File to encrypt and embed into the PNG\n\n"
+
+            "Other options:\n"
+            "  -h, --help                 Display this help message and exit\n\n"
+
+            "Examples:\n"
+            "  Embed a file into a PNG:\n"
+            "    %s -p cover.png -f secret.txt -k mypassword -e\n\n"
+            "  Extract a file from a stego PNG:\n"
+            "    %s -p image_steg.png -k mypassword -d\n\n",
+
+            program_name,
+            program_name,
+            program_name);
 }
 
 int handle_arguments(const char *binary_name, arguments *args, struct fsm_error *err)
@@ -209,7 +212,7 @@ int handle_arguments(const char *binary_name, arguments *args, struct fsm_error 
 
     if (args->key == NULL)
     {
-        SET_ERROR(err, "Have to pass in the key to encrypt the message");
+        SET_ERROR(err, "Have to pass in the key to encrypt or decrypt the message");
         usage(binary_name);
 
         return -1;

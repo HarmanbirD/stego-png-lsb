@@ -175,7 +175,6 @@ static int output_handler(struct fsm_context *context, struct fsm_error *err)
     ctx = context;
     SET_TRACE(context, "in output", "STATE_OUTPUT");
 
-    printf("Mode: %s\n", ctx->args->mode == ENCRYPT ? "Encrypt" : "Decrypt");
     if (ctx->args->mode == ENCRYPT)
     {
         char *out_name = make_steg_filename(ctx->args->png);
@@ -233,6 +232,8 @@ static int cleanup_handler(struct fsm_context *context, struct fsm_error *err)
 
     free(ctx->args->plaintext);
     ctx->args->plaintext_len = 0;
+
+    fsm_error_clear(err);
 
     return FSM_EXIT;
 }
